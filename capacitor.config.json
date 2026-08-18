@@ -1,0 +1,9 @@
+{
+  "appId": "com.bookmerger.app",
+  "appName": "BookMerger",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

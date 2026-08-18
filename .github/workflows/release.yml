@@ -1,0 +1,128 @@
+name: Build & Release Desktop (.exe) and Android (.apk)
+
+on:
+  release:
+    types: [created, published]
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # ==========================================================
+  # 1. BUILD WINDOWS EXECUTABLE (.EXE INSTALLER & PORTABLE)
+  # ==========================================================
+  build-windows:
+    name: 🪟 Build Windows EXE
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm install --legacy-peer-deps
+          npm install --save-dev electron electron-builder --legacy-peer-deps
+
+      - name: Build Web Application
+        run: npm run build
+
+      - name: Build Windows Executables (.exe)
+        run: npx electron-builder --win --x64 --config electron-builder.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows Artifact to Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
+        with:
+          files: |
+            dist_electron/*.exe
+            dist_electron/*.blockmap
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifact (For Manual Workflow Runs)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BookMerger-Windows-EXE
+          path: dist_electron/*.exe
+
+  # ==========================================================
+  # 2. BUILD ANDROID APPLICATION PACKAGE (.APK)
+  # ==========================================================
+  build-android:
+    name: 🤖 Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build Web Application
+        run: npm run build
+
+      - name: Bundle Web Assets into Android Project
+        run: |
+          mkdir -p android/app/src/main/assets/public
+          cp -r dist/* android/app/src/main/assets/public/
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Build Android APKs (Debug & Release)
+        run: |
+          cd android
+          gradle assembleDebug assembleRelease
+
+      - name: Prepare APKs for Release
+        run: |
+          mkdir -p release-apks
+          find android/app/build/outputs/apk -name "*.apk" -exec cp {} release-apks/ \;
+          cd release-apks
+          # Rename to readable names
+          for f in *debug*.apk; do [ -f "$f" ] && mv "$f" "BookMerger-Android-debug.apk"; done
+          for f in *release*.apk; do [ -f "$f" ] && mv "$f" "BookMerger-Android-release.apk"; done
+          ls -la
+
+      - name: Upload Android APK to Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
+        with:
+          files: release-apks/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Artifact (For Manual Workflow Runs)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BookMerger-Android-APK
+          path: release-apks/*.apk
