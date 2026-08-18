@@ -1,0 +1,6 @@
+{
+  "name": "Universal Chapter & Book Merger",
+  "description": "Professional FB2, EPUB and DOCX book and chapter merger, editor, smart reorderer, and multi-format ebook compiler.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/* Custom dark scrollbar matching PyQt6 UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0d0d14;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a40;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f5a;
+}
