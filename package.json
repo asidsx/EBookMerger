@@ -2,6 +2,9 @@
   "name": "book-merger",
   "private": true,
   "version": "1.0.0",
+  "description": "Universal Chapter and Book Merger",
+  "author": "Book Merger",
+  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",

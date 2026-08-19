@@ -74,9 +74,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -99,7 +96,7 @@ jobs:
       - name: Build Android APKs (Debug & Release)
         run: |
           cd android
-          gradle assembleDebug assembleRelease || gradle assembleDebug
+          gradle assembleRelease assembleDebug
 
       - name: Prepare APKs for Release
         run: |
