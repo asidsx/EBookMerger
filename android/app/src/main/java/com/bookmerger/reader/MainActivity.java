@@ -1,4 +1,4 @@
-package com.bookmerger.app;
+package com.bookmerger.reader;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setLoadWithOverviewMode(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
 
-        // Modern AssetLoader for Android 10, 11, 12, 13, 14, 15+
+        // AssetLoader for local bundled assets
         final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
                 .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
                 .build();
@@ -71,7 +71,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Handle modern Back button
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -84,7 +83,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Load bundled web app via secure local origin
         webView.loadUrl("https://appassets.androidplatform.net/assets/public/index.html");
     }
 

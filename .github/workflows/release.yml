@@ -94,10 +94,10 @@ jobs:
         with:
           gradle-version: 8.5
 
-      - name: Build Signed Android APKs
+      - name: Build Android APKs
         run: |
           cd android
-          # Generate signing keystore
+          # Generate signing keystore for build
           keytool -genkey -v -keystore app/release.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=BookMerger, OU=App, O=BookMerger, L=City, S=State, C=US"
           mkdir -p ~/.android ~/.config/.android
           cp app/release.keystore ~/.android/debug.keystore
@@ -107,19 +107,25 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease assembleDebug --no-daemon
 
-      - name: Prepare Signed APKs for Release
+      - name: Sign and Align APKs with Uber APK Signer (v1 + v2 + v3 + v4 Schemes)
         run: |
+          curl -L -o uber-apk-signer.jar https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar
           mkdir -p release-apks
-          # Find generated APKs
-          find android/app/build/outputs/apk -name "*.apk" -exec cp {} release-apks/ \;
-          cd release-apks
+          # Run zipalign (4-byte boundary) and multi-scheme signing
+          java -jar uber-apk-signer.jar --apks $(find android/app/build/outputs/apk -name "*.apk") --out release-apks/ --overwrite
           
-          # Rename release APK to official installation name
-          if [ -f app-release.apk ]; then
-            cp app-release.apk BookMerger-Android.apk
+          cd release-apks
+          # Find aligned-signed release APK
+          RELEASE_APK=$(find . -name "*release*aligned-signed.apk" | head -n 1)
+          if [ -n "$RELEASE_APK" ]; then
+            cp "$RELEASE_APK" BookMerger-Android.apk
+          else
+            cp $(find . -name "*release*.apk" | head -n 1) BookMerger-Android.apk
           fi
-          if [ -f app-debug.apk ]; then
-            cp app-debug.apk BookMerger-Android-debug.apk
+
+          DEBUG_APK=$(find . -name "*debug*aligned-signed.apk" | head -n 1)
+          if [ -n "$DEBUG_APK" ]; then
+            cp "$DEBUG_APK" BookMerger-Android-debug.apk
           fi
           ls -la
 

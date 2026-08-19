@@ -1,14 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.bookmerger.app"
+    namespace "com.bookmerger.reader"
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.bookmerger.app"
+        applicationId "com.bookmerger.reader"
         minSdk 24
         targetSdk 34
-        versionCode 2
+        versionCode 10
         versionName "1.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
