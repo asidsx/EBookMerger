@@ -2,8 +2,7 @@
   "appId": "com.bookmerger.app",
   "productName": "BookMerger",
   "directories": {
-    "output": "dist_electron",
-    "buildResources": "build"
+    "output": "dist_electron"
   },
   "files": [
     "dist/**/*",
@@ -20,8 +19,7 @@
         "target": "portable",
         "arch": ["x64"]
       }
-    ],
-    "artifactName": "${productName}-${version}-${target}.${ext}"
+    ]
   },
   "nsis": {
     "oneClick": false,
