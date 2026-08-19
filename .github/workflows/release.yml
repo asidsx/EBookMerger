@@ -107,26 +107,39 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease assembleDebug --no-daemon
 
-      - name: Sign and Align APKs with Uber APK Signer (v1 + v2 + v3 + v4 Schemes)
+      - name: Sign and Align APKs (v1 + v2 + v3 + v4 Schemes)
         run: |
           curl -L -o uber-apk-signer.jar https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar
           mkdir -p release-apks
-          # Run zipalign (4-byte boundary) and multi-scheme signing
-          java -jar uber-apk-signer.jar --apks $(find android/app/build/outputs/apk -name "*.apk") --out release-apks/ --overwrite
           
-          cd release-apks
-          # Find aligned-signed release APK
-          RELEASE_APK=$(find . -name "*release*aligned-signed.apk" | head -n 1)
-          if [ -n "$RELEASE_APK" ]; then
-            cp "$RELEASE_APK" BookMerger-Android.apk
-          else
-            cp $(find . -name "*release*.apk" | head -n 1) BookMerger-Android.apk
+          # Sign Release APK
+          RELEASE_SRC="android/app/build/outputs/apk/release/app-release.apk"
+          if [ -f "$RELEASE_SRC" ]; then
+            java -jar uber-apk-signer.jar -a "$RELEASE_SRC" --out release-apks --allowResign
           fi
 
-          DEBUG_APK=$(find . -name "*debug*aligned-signed.apk" | head -n 1)
-          if [ -n "$DEBUG_APK" ]; then
-            cp "$DEBUG_APK" BookMerger-Android-debug.apk
+          # Sign Debug APK
+          DEBUG_SRC="android/app/build/outputs/apk/debug/app-debug.apk"
+          if [ -f "$DEBUG_SRC" ]; then
+            java -jar uber-apk-signer.jar -a "$DEBUG_SRC" --out release-apks --allowResign
           fi
+
+          cd release-apks
+          ls -la
+          
+          # Copy to final release filenames
+          if [ -f "app-release-aligned-signed.apk" ]; then
+            cp "app-release-aligned-signed.apk" "BookMerger-Android.apk"
+          elif [ -f "app-release.apk" ]; then
+            cp "app-release.apk" "BookMerger-Android.apk"
+          fi
+
+          if [ -f "app-debug-aligned-signed.apk" ]; then
+            cp "app-debug-aligned-signed.apk" "BookMerger-Android-debug.apk"
+          elif [ -f "app-debug.apk" ]; then
+            cp "app-debug.apk" "BookMerger-Android-debug.apk"
+          fi
+
           ls -la
 
       - name: Upload Android APK to Release
