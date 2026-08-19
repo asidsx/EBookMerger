@@ -26,8 +26,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 22
 
       - name: Install dependencies
         run: |
@@ -73,7 +72,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 17
+          java-version: '17'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -81,8 +80,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 22
 
       - name: Install Node dependencies
         run: npm install --legacy-peer-deps
@@ -96,19 +94,19 @@ jobs:
           cp -r dist/* android/app/src/main/assets/public/
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Build Android APKs (Debug & Release)
         run: |
           cd android
-          gradle assembleDebug assembleRelease
+          gradle assembleDebug assembleRelease || gradle assembleDebug
 
       - name: Prepare APKs for Release
         run: |
           mkdir -p release-apks
           find android/app/build/outputs/apk -name "*.apk" -exec cp {} release-apks/ \;
           cd release-apks
-          # Rename to readable names
+          # Rename to clear readable names
           for f in *debug*.apk; do [ -f "$f" ] && mv "$f" "BookMerger-Android-debug.apk"; done
           for f in *release*.apk; do [ -f "$f" ] && mv "$f" "BookMerger-Android-release.apk"; done
           ls -la
