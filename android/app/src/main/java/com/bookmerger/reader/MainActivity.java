@@ -2,8 +2,11 @@ package com.bookmerger.reader;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
+import android.webkit.ConsoleMessage;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -27,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         webView = new WebView(this);
+        webView.setBackgroundColor(Color.parseColor("#0a0a0f"));
         setContentView(webView);
 
         WebSettings settings = webView.getSettings();
@@ -38,8 +42,9 @@ public class MainActivity extends AppCompatActivity {
         settings.setUseWideViewPort(true);
         settings.setLoadWithOverviewMode(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
-        // AssetLoader for local bundled assets
+        // Map root /assets/ to android_asset/
         final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
                 .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
                 .build();
@@ -49,9 +54,21 @@ public class MainActivity extends AppCompatActivity {
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 return assetLoader.shouldInterceptRequest(request.getUrl());
             }
+
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                super.onReceivedError(view, errorCode, description, failingUrl);
+                Log.e("BookMergerWeb", "Failed to load: " + failingUrl + " - " + description);
+            }
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+                Log.d("BookMergerWeb", consoleMessage.message() + " -- line " + consoleMessage.lineNumber());
+                return true;
+            }
+
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                 if (uploadMessage != null) {
@@ -83,7 +100,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webView.loadUrl("https://appassets.androidplatform.net/assets/public/index.html");
+        // Load root index.html via AssetLoader
+        webView.loadUrl("https://appassets.androidplatform.net/assets/index.html");
     }
 
     @Override
