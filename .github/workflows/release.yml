@@ -124,24 +124,20 @@ jobs:
           fi
 
           cd release-apks
-          ls -la
 
-          # Copy any signed release APK to BookMerger-Android.apk
-          for f in *release*.apk app-release*.apk; do
-            if [ -f "$f" ]; then
-              cp -v "$f" BookMerger-Android.apk
-              break
-            fi
-          done
+          # Locate and prepare clean release files
+          RELEASE_FILE=$(find . -maxdepth 1 -name "*release*.apk" | head -n 1)
+          if [ -n "$RELEASE_FILE" ]; then
+            cp -f "$RELEASE_FILE" BookMerger-Android.apk
+          fi
 
-          # Copy any signed debug APK to BookMerger-Android-debug.apk
-          for f in *debug*.apk app-debug*.apk; do
-            if [ -f "$f" ]; then
-              cp -v "$f" BookMerger-Android-debug.apk
-              break
-            fi
-          done
+          DEBUG_FILE=$(find . -maxdepth 1 -name "*debug*.apk" | head -n 1)
+          if [ -n "$DEBUG_FILE" ]; then
+            cp -f "$DEBUG_FILE" BookMerger-Android-debug.apk
+          fi
 
+          # Clean up temporary intermediate signature files
+          rm -f app-release*.apk app-debug*.apk *.idsig
           ls -la
 
       - name: Upload Android APK to Release
@@ -151,7 +147,6 @@ jobs:
           files: |
             release-apks/BookMerger-Android.apk
             release-apks/BookMerger-Android-debug.apk
-            release-apks/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
