@@ -1,6 +1,7 @@
 {
   "appId": "com.bookmerger.app",
   "productName": "BookMerger",
+  "publish": null,
   "directories": {
     "output": "dist_electron"
   },
