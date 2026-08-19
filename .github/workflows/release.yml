@@ -124,19 +124,23 @@ jobs:
           fi
 
           cd release-apks
-          
-          # Copy to clean final release filenames
-          if [ -f "app-release-aligned-signed.apk" ]; then
-            cp "app-release-aligned-signed.apk" "BookMerger-Android.apk"
-          elif [ -f "app-release.apk" ]; then
-            cp "app-release.apk" "BookMerger-Android.apk"
-          fi
+          ls -la
 
-          if [ -f "app-debug-aligned-signed.apk" ]; then
-            cp "app-debug-aligned-signed.apk" "BookMerger-Android-debug.apk"
-          elif [ -f "app-debug.apk" ]; then
-            cp "app-debug.apk" "BookMerger-Android-debug.apk"
-          fi
+          # Copy any signed release APK to BookMerger-Android.apk
+          for f in *release*.apk app-release*.apk; do
+            if [ -f "$f" ]; then
+              cp -v "$f" BookMerger-Android.apk
+              break
+            fi
+          done
+
+          # Copy any signed debug APK to BookMerger-Android-debug.apk
+          for f in *debug*.apk app-debug*.apk; do
+            if [ -f "$f" ]; then
+              cp -v "$f" BookMerger-Android-debug.apk
+              break
+            fi
+          done
 
           ls -la
 
@@ -147,6 +151,7 @@ jobs:
           files: |
             release-apks/BookMerger-Android.apk
             release-apks/BookMerger-Android-debug.apk
+            release-apks/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

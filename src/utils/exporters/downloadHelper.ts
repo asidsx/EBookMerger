@@ -3,6 +3,42 @@ import { ChapterItem, ExportFormat } from '../../types/book';
 import { buildFB2 } from './fb2Builder';
 import { buildEPUB } from './epubBuilder';
 
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      const base64 = dataUrl ? dataUrl.split(',')[1] : '';
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function deliverFile(blob: Blob, fileName: string, mimeType: string): Promise<string> {
+  // 1. Check if running inside native Android wrapper
+  if (typeof (window as any).AndroidBridge !== 'undefined' && typeof (window as any).AndroidBridge.saveBook === 'function') {
+    const base64Data = await blobToBase64(blob);
+    const saved = (window as any).AndroidBridge.saveBook(fileName, base64Data, mimeType);
+    if (saved) {
+      return `Книга "${fileName}" успешно сохранена в папку Документы/Books на вашем устройстве!`;
+    }
+  }
+
+  // 2. Web Browser / Desktop fallback
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+
+  return `Книга "${fileName}" успешно скачана!`;
+}
+
 export async function exportMergedBook(
   chapters: ChapterItem[],
   format: ExportFormat,
@@ -15,30 +51,19 @@ export async function exportMergedBook(
 
   const safeTitle = (bookTitle || 'MyMergedBook').trim().replace(/[/\\?%*:|"<>]/g, '_');
 
-  const triggerDownload = (blob: Blob, fileName: string) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
-  };
-
   if (format === 'fb2') {
     onProgress?.('Генерация файла FB2 FictionBook...');
     const fb2Xml = buildFB2(chapters, safeTitle);
     const blob = new Blob([fb2Xml], { type: 'application/x-fictionbook+xml;charset=utf-8' });
-    triggerDownload(blob, `${safeTitle}.fb2`);
-    return { success: true, message: `Книга "${safeTitle}.fb2" успешно собрана и скачана!` };
+    const msg = await deliverFile(blob, `${safeTitle}.fb2`, 'application/x-fictionbook+xml');
+    return { success: true, message: msg };
   }
 
   if (format === 'epub') {
     onProgress?.('Сборка архива EPUB...');
     const epubBlob = await buildEPUB(chapters, safeTitle);
-    triggerDownload(epubBlob, `${safeTitle}.epub`);
-    return { success: true, message: `Книга "${safeTitle}.epub" успешно собрана и скачана!` };
+    const msg = await deliverFile(epubBlob, `${safeTitle}.epub`, 'application/epub+zip');
+    return { success: true, message: msg };
   }
 
   if (format === 'both') {
@@ -52,10 +77,10 @@ export async function exportMergedBook(
     zip.file(`${safeTitle}.epub`, epubBlob);
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });
-    triggerDownload(zipBlob, `${safeTitle}_both_formats.zip`);
+    const msg = await deliverFile(zipBlob, `${safeTitle}_both_formats.zip`, 'application/zip');
     return {
       success: true,
-      message: `Оба формата (FB2 + EPUB) упакованы в ZIP и успешно скачаны!`,
+      message: msg,
     };
   }
 
