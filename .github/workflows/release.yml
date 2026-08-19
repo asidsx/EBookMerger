@@ -97,6 +97,12 @@ jobs:
       - name: Build Signed Android APKs
         run: |
           cd android
+          # Generate signing keystore
+          keytool -genkey -v -keystore app/release.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=BookMerger, OU=App, O=BookMerger, L=City, S=State, C=US"
+          mkdir -p ~/.android ~/.config/.android
+          cp app/release.keystore ~/.android/debug.keystore
+          cp app/release.keystore ~/.config/.android/debug.keystore
+
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleRelease assembleDebug --no-daemon
